@@ -1,5 +1,5 @@
 #include "Queue.h"
-#include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -23,7 +23,9 @@ void pushQueue(Queue& q, int value) {
 }
 
 int popQueue(Queue& q) {
-    if (isQueueEmpty(q)) return -1;
+    if (isQueueEmpty(q)) {
+        throw out_of_range("Empty queue");
+    }
     QueueNode* temp = q.head;
     int value = temp->data;
     q.head = q.head->next;

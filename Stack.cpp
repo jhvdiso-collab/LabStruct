@@ -1,5 +1,5 @@
 #include "Stack.h"
-#include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -9,7 +9,9 @@ void push(StackNode*& top, int value) {
 }
 
 int pop(StackNode*& top) {
-    if (isEmpty(top)) return -1;
+    if (isEmpty(top)) {
+        throw out_of_range("Empty stack");
+    }
     StackNode* temp = top;
     int value = temp->data;
     top = top->next;

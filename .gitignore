@@ -1,0 +1,10 @@
+/build*/
+*.data
+*.data.tmp.*
+/go/labstruct
+__pycache__/
+
+.idea/
+/cmake-build*/
+/bin/
+/labstruct

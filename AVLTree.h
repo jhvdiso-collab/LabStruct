@@ -25,4 +25,5 @@ Node* remove(Node* p, int k);
 void printInOrder(Node* root);
 void freeMemory(Node* root);
 
+bool searchAVL(const Node* root, int key);
 #endif

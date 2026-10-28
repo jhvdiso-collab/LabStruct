@@ -5,11 +5,17 @@
 using namespace std;
 
 int getHeight(Node* n) {
-    return n ? n->height : 0;
+    if (n == nullptr) {
+        return 0;
+    }
+    return n->height;
 }
 
 int getBalance(Node* n) {
-    return n ? getHeight(n->right) - getHeight(n->left) : 0;
+    if (n == nullptr) {
+        return 0;
+    }
+    return getHeight(n->right) - getHeight(n->left);
 }
 
 void updateHeight(Node* n) {
@@ -60,7 +66,9 @@ Node* balance(Node* p) {
 }
 
 Node* insert(Node* p, int k) {
-    if (!p) return new Node(k);
+    if (!p) {
+        return new Node(k);
+    }
 
     if (k < p->key) {
         p->left = insert(p->left, k);
@@ -73,11 +81,16 @@ Node* insert(Node* p, int k) {
 }
 
 Node* findMin(Node* p) {
-    return p->left ? findMin(p->left) : p;
+    while (p->left != nullptr) {
+        p = p->left;
+    }
+    return p;
 }
 
 Node* remove(Node* p, int k) {
-    if (!p) return nullptr;
+    if (!p) {
+        return nullptr;
+    }
 
     if (k < p->key) {
         p->left = remove(p->left, k);
@@ -85,7 +98,10 @@ Node* remove(Node* p, int k) {
         p->right = remove(p->right, k);
     } else {
         if (!p->left || !p->right) {
-            Node* temp = p->left ? p->left : p->right;
+            Node* temp = p->left;
+            if (temp == nullptr) {
+                temp = p->right;
+            }
             delete p;
             return temp;
         }
@@ -97,15 +113,32 @@ Node* remove(Node* p, int k) {
 }
 
 void printInOrder(Node* root) {
-    if (root == nullptr) return;
+    if (root == nullptr) {
+        return;
+    }
     printInOrder(root->left);
     cout << root->key << " ";
     printInOrder(root->right);
 }
 
 void freeMemory(Node* root) {
-    if (!root) return;
+    if (!root) {
+        return;
+    }
     freeMemory(root->left);
     freeMemory(root->right);
     delete root;
+}
+bool searchAVL(const Node* root, int key) {
+    while (root) {
+        if (root->key == key) {
+            return true;
+        }
+        if (key < root->key) {
+            root = root->left;
+        } else {
+            root = root->right;
+        }
+    }
+    return false;
 }
