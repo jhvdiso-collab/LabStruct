@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd) || exit 1
-executable="$repo_dir/build/data_structures_app"
+executable="$repo_dir/build/labstruct"
 if [[ ! -x "$executable" ]]; then
-    echo 'Сначала соберите проект: cmake -S . -B build && cmake --build build -j2' >&2
+    echo 'Сначала соберите проект: go build -o build/labstruct .' >&2
     exit 1
 fi
 exec "$executable" "$@"
