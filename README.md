@@ -1,77 +1,17 @@
+# LabStruct — C++17
+
 Версии: [C++](https://github.com/jhvdiso-collab/LabStruct/tree/c%2B%2B-version), [Go](https://github.com/jhvdiso-collab/LabStruct/tree/go-version). В `main` находятся обе реализации и проверки совместимости.
 
-# Лабораторная работа №1: абстрактные структуры данных
-
-Вариант 2 — **АВЛ-дерево**. C++17 реализует массив, односвязный и двусвязный
-списки, стек, очередь и АВЛ. В Go независимо реализованы пять линейных структур.
-Контейнеры хранят знаковые 32-битные целые числа. Динамическая память, связи узлов,
-расширение массива и балансировка реализованы вручную. Стандартные map/vector/slice
-используются также для реестра имён, разбора команд и сериализации, но не заменяют
-реализацию самих изучаемых структур.
-
-## Сборка и проверки
-
-Нужны CMake >= 3.20, компилятор C++17, Python 3 для тестов и Go >= 1.23.
-C++-сохранение использует POSIX `mkstemp`; поддерживаемая среда — Linux/macOS.
-Зависимостей из сторонних библиотек нет.
+Массив, списки, стек, очередь и АВЛ. Требуются CMake >= 3.20, C++17 и Python 3; Linux/macOS.
 
 ```bash
-cmake -S . -B ../labstruct-build -DCMAKE_BUILD_TYPE=Debug
-cmake --build ../labstruct-build --parallel 2
-ctest --test-dir ../labstruct-build --output-on-failure
-(cd go && go build -o ../../labstruct-build/labstruct-go . && go test ./...)
-python3 tests/cli.py ../labstruct-build/labstruct-go --go
-python3 tests/interop.py ../labstruct-build/data_structures_app ../labstruct-build/labstruct-go
-```
-
-Полный набор этих проверок: `bash scripts/check.sh`. При необходимости задать
-`CMAKE`, `GO`, `PYTHON`, `BUILD_DIR` (для последнего предпочтителен абсолютный путь).
-В подготовленной облачной среде:
-
-```bash
-CMAKE=/workspace/.labstruct-tools/bin/cmake \
-GO=/workspace/.labstruct-go/go/bin/go \
-GOCACHE=/workspace/.cache/go-build bash scripts/check.sh
-```
-
-`BST.cpp`/`BST.h` сохранены как дополнительный учебный пример; команды `T…`
-используют исключительно АВЛ из `AVLTree.cpp`.
-
-## Запуск
-
-Для вызова из корня проекта в формате `./dbms` соберите программу в `build`:
-
-```bash
-cmake -S . -B build
+cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build -j2
-./dbms --file file.data --query 'MPUSH myarray 10'
-source scripts/run.sh
-run 'PRINT myarray'
+ctest --test-dir build --output-on-failure
+./dbms --file file.data --query 'MPUSH numbers 10'
 ```
 
-`run` использует тот же `file.data` в корне проекта. Другой файл можно выбрать
-через `LABSTRUCT_FILE=/полный/путь/demo.data`. Функция доступна в терминале Bash,
-в котором выполнена команда `source`.
-
-Один запуск — одна команда. Каждый запуск загружает файл, выполняет запрос,
-сохраняет изменения и завершается. Прежнее демонстрационное меню заменено
-интерфейсом из ТЗ.
-
-```bash
-../labstruct-build/data_structures_app --file example.data --query 'MPUSH numbers 10'
-../labstruct-build/data_structures_app --file example.data --query 'MINSERT numbers 0 5'
-../labstruct-build/data_structures_app --file example.data --query 'PRINT numbers'
-# [5 10]
-../labstruct-build/labstruct-go --file example.data --query 'SPUSH stack -1'
-../labstruct-build/labstruct-go --file example.data --query 'SPOP stack'
-# -1
-../labstruct-build/data_structures_app --file example.data --query 'TINSERT tree 30'
-../labstruct-build/data_structures_app --file example.data --query 'ISMEMBER tree 30'
-# TRUE
-```
-
-`--help` выводит краткую справку. При успехе код выхода 0, при ошибке — 1 и
-сообщение в stderr. Сообщение об успехе выводится только после успешного сохранения.
+Полная проверка ветки: `bash scripts/check.sh`. Справочник: [COMMANDS.md](COMMANDS.md).
 
 ## Общие правила
 
