@@ -1,19 +1,20 @@
 #include "Stack.h"
 #include <stdexcept>
+#include <string>
 
 using namespace std;
 
-void push(StackNode*& top, int value) {
+void push(StackNode*& top, const string& value) {
     StackNode* newNode = new StackNode{value, top};
     top = newNode;
 }
 
-int pop(StackNode*& top) {
+string pop(StackNode*& top) {
     if (isEmpty(top)) {
         throw out_of_range("Empty stack");
     }
     StackNode* temp = top;
-    int value = temp->data;
+    string value = temp->data;
     top = top->next;
     delete temp;
     return value;
