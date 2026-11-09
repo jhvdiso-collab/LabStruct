@@ -3,23 +3,24 @@
 #include <stdexcept>
 #include <climits>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
 void initArray(DynamicArray& arr, int initialCapacity) {
     initialCapacity = max(1, initialCapacity);
-    arr.data = new int[initialCapacity];
+    arr.data = new string[initialCapacity];
     arr.size = 0;
     arr.capacity = initialCapacity;
 }
 
-void pushBack(DynamicArray& arr, int value) {
+void pushBack(DynamicArray& arr, const string& value) {
     if (arr.size == arr.capacity) {
         if (arr.capacity > INT_MAX / 2) {
             throw length_error("Array too large");
         }
         int newCapacity = max(1, arr.capacity * 2);
-        int* newData = new int[newCapacity];
+        string* newData = new string[newCapacity];
         for (int i = 0; i < arr.size; i++) {
             newData[i] = arr.data[i];
         }
@@ -50,7 +51,8 @@ void freeArray(DynamicArray& arr) {
     arr.size = 0;
     arr.capacity = 0;
 }
-void insertAt(DynamicArray& arr, int index, int value) {
+
+void insertAt(DynamicArray& arr, int index, const string& value) {
     if (index < 0 || index > arr.size) {
         throw std::out_of_range("Array index");
     }
@@ -60,24 +62,28 @@ void insertAt(DynamicArray& arr, int index, int value) {
     }
     arr.data[index] = value;
 }
-int getAt(const DynamicArray& arr, int index) {
+
+string getAt(const DynamicArray& arr, int index) {
     if (index < 0 || index >= arr.size) {
         throw std::out_of_range("Array index");
     }
     return arr.data[index];
 }
-int eraseAt(DynamicArray& arr, int index) {
-    int value = getAt(arr, index);
+
+string eraseAt(DynamicArray& arr, int index) {
+    string value = getAt(arr, index);
     for (int i = index; i + 1 < arr.size; ++i) {
         arr.data[i] = arr.data[i + 1];
     }
     --arr.size;
     return value;
 }
-void setAt(DynamicArray& arr, int index, int value) {
+
+void setAt(DynamicArray& arr, int index, const string& value) {
     getAt(arr, index);
     arr.data[index] = value;
 }
+
 int arrayLength(const DynamicArray& arr) {
     return arr.size;
 }
