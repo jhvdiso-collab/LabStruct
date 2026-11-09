@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-// Owns the manually implemented structures; copying raw owning pointers is forbidden.
+
 struct Container {
     explicit Container(char type);
     ~Container();
@@ -24,9 +24,14 @@ struct Container {
     StackNode* stack = nullptr;
     Queue queue{};
     Node* tree = nullptr;
-    std::vector<int> values(bool reverse = false) const;
+    
+
+    std::vector<std::string> values(bool reverse = false) const; 
+    std::vector<int> treeValues() const; 
 };
+
 struct QueryResult { std::string output; bool changed; };
+
 class Database {
 public:
     void load(const std::string& path);
