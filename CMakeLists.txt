@@ -5,9 +5,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(labstruct
-    DynamicArray.cpp Stack.cpp Queue.cpp SinglyLinkedList.cpp
-    DoublyLinkedList.cpp BST.cpp AVLTree.cpp Database.cpp)
+        DynamicArray.cpp Stack.cpp Queue.cpp SinglyLinkedList.cpp
+        DoublyLinkedList.cpp BST.cpp AVLTree.cpp Database.cpp)
 
 target_include_directories(labstruct PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(labstruct PRIVATE -Wall -Wextra -Wpedantic)
-
+add_executable(data_structures_app main.cpp)
+target_link_libraries(data_structures_app PRIVATE labstruct)
