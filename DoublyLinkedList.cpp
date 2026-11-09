@@ -1,6 +1,7 @@
 #include "DoublyLinkedList.h"
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 using namespace std;
 
@@ -9,7 +10,7 @@ void initDoublyList(DoublyList& list) {
     list.tail = nullptr;
 }
 
-void pushFrontDoubly(DoublyList& list, int value) {
+void pushFrontDoubly(DoublyList& list, const string& value) {
     DoubleNode* newNode = new DoubleNode{value, nullptr, list.head};
     if (list.head != nullptr) {
         list.head->prev = newNode;
@@ -19,7 +20,7 @@ void pushFrontDoubly(DoublyList& list, int value) {
     list.head = newNode;
 }
 
-void pushBackDoubly(DoublyList& list, int value) {
+void pushBackDoubly(DoublyList& list, const string& value) {
     DoubleNode* newNode = new DoubleNode{value, list.tail, nullptr};
     if (list.tail != nullptr) {
         list.tail->next = newNode;
@@ -27,6 +28,36 @@ void pushBackDoubly(DoublyList& list, int value) {
         list.head = newNode;
     }
     list.tail = newNode;
+}
+
+void pushBeforeDoubly(DoublyList& list, const string& target, const string& value) {
+    DoubleNode* curr = list.head;
+    while (curr != nullptr && curr->data != target) {
+        curr = curr->next;
+    }
+    if (curr == nullptr) return;
+    if (curr == list.head) {
+        pushFrontDoubly(list, value);
+        return;
+    }
+    DoubleNode* newNode = new DoubleNode{value, curr->prev, curr};
+    curr->prev->next = newNode;
+    curr->prev = newNode;
+}
+
+void pushAfterDoubly(DoublyList& list, const string& target, const string& value) {
+    DoubleNode* curr = list.head;
+    while (curr != nullptr && curr->data != target) {
+        curr = curr->next;
+    }
+    if (curr == nullptr) return;
+    if (curr == list.tail) {
+        pushBackDoubly(list, value);
+        return;
+    }
+    DoubleNode* newNode = new DoubleNode{value, curr, curr->next};
+    curr->next->prev = newNode;
+    curr->next = newNode;
 }
 
 void popFrontDoubly(DoublyList& list) {
@@ -68,6 +99,7 @@ void freeDoublyList(DoublyList& list) {
         popFrontDoubly(list);
     }
 }
+
 namespace {
 DoubleNode* doublyAt(const DoublyList& list, int index) {
     if (index < 0) {
@@ -82,8 +114,8 @@ DoubleNode* doublyAt(const DoublyList& list, int index) {
     }
     return node;
 }
-int unlinkDoubly(DoublyList& list, DoubleNode* node) {
-    int value = node->data;
+string unlinkDoubly(DoublyList& list, DoubleNode* node) {
+    string value = node->data;
     if (node->prev) {
         node->prev->next = node->next;
     } else {
@@ -97,7 +129,8 @@ int unlinkDoubly(DoublyList& list, DoubleNode* node) {
     delete node;
     return value;
 }
-} // namespace
+} 
+
 int doublyLength(const DoublyList& list) {
     int n = 0;
     for (DoubleNode* p = list.head; p; p = p->next) {
@@ -105,10 +138,12 @@ int doublyLength(const DoublyList& list) {
     }
     return n;
 }
-int getDoubly(const DoublyList& list, int index) {
+
+string getDoubly(const DoublyList& list, int index) {
     return doublyAt(list, index)->data;
 }
-int findDoubly(const DoublyList& list, int value) {
+
+int findDoubly(const DoublyList& list, const string& value) {
     int i = 0;
     for (DoubleNode* p = list.head; p; p = p->next, ++i) {
         if (p->data == value) {
@@ -117,7 +152,8 @@ int findDoubly(const DoublyList& list, int value) {
     }
     return -1;
 }
-void insertDoubly(DoublyList& list, int index, int value) {
+
+void insertDoubly(DoublyList& list, int index, const string& value) {
     if (index < 0) {
         throw out_of_range("List index");
     }
@@ -134,10 +170,12 @@ void insertDoubly(DoublyList& list, int index, int value) {
     }
     prev->next = node;
 }
-int eraseDoubly(DoublyList& list, int index) {
+
+string eraseDoubly(DoublyList& list, int index) {
     return unlinkDoubly(list, doublyAt(list, index));
 }
-bool eraseDoublyValue(DoublyList& list, int value) {
+
+bool eraseDoublyValue(DoublyList& list, const string& value) {
     for (DoubleNode* p = list.head; p; p = p->next) {
         if (p->data == value) {
             unlinkDoubly(list, p);
@@ -146,7 +184,8 @@ bool eraseDoublyValue(DoublyList& list, int value) {
     }
     return false;
 }
-int popBackDoubly(DoublyList& list) {
+
+string popBackDoubly(DoublyList& list) {
     if (!list.tail) {
         throw std::out_of_range("Empty list");
     }
