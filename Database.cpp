@@ -10,7 +10,7 @@
 using namespace std;
 
 namespace {
-// Эта функция нужна для парсинга индексов и ключей дерева (так как дерево int)
+    
 int number(const string& s) {
     int value;
     auto result = from_chars(s.data(), s.data() + s.size(), value);
@@ -32,7 +32,6 @@ void inorder(const Node* p, vector<int>& out) {
     inorder(p->left, out); out.push_back(p->key); inorder(p->right, out);
 }
 
-// Форматтер для строковых структур
 string format(const vector<string>& values) {
     ostringstream out;
     out << '[';
@@ -44,7 +43,6 @@ string format(const vector<string>& values) {
     return out.str();
 }
 
-// Форматтер для дерева (числовые)
 string formatTree(const vector<int>& values) {
     ostringstream out;
     out << '[';
@@ -109,7 +107,6 @@ Container::~Container() {
     freeStack(stack); freeQueue(queue); freeMemory(tree);
 }
 
-// Метод для строковых структур (M, F, L, S, Q)
 vector<string> Container::values(bool reverseOrder) const {
     vector<string> out;
     switch (type) {
@@ -130,7 +127,6 @@ vector<string> Container::values(bool reverseOrder) const {
     return out;
 }
 
-// Метод для дерева (int)
 vector<int> Container::treeValues() const {
     vector<int> out;
     if (type == 'T') inorder(tree, out);
@@ -165,7 +161,7 @@ void Database::load(const string& path) {
             case 'T': {
                 int value = number(token);
                 if (searchAVL(item->tree, value)) throw runtime_error("Duplicate AVL key");
-                item->tree = insert(item->tree, value); 
+                item->tree = insert(item->tree, value);
                 break;
             }
             }
@@ -220,13 +216,10 @@ QueryResult Database::execute(const string& query) {
     if (spec == commands().end()) throw invalid_argument("Unknown command: " + op);
     if (args.size() != static_cast<size_t>(spec->second)) throw invalid_argument("Wrong argument count");
     if (!validName(args[1])) throw invalid_argument("Invalid container name");
-
-    // Для индексов и ключей дерева берем число
     int a = 0;
     if (args.size() > 2) {
         try { a = number(args[2]); } catch(...) { /* Если это не число, оставляем 0 */ }
     }
-    // Для значений берем строку
     string valA = args.size() > 2 ? args[2] : "";
     string valB = args.size() > 3 ? args[3] : "";
 
@@ -248,7 +241,7 @@ QueryResult Database::execute(const string& query) {
     }
     Container& c = *found->second;
     if (create) return {"OK", true};
-    
+
     if (type == 'M') {
         if (op == "MPUSH") { pushBack(c.array, valA); return {valA, true}; }
         if (op == "MINSERT") { insertAt(c.array, a, valB); return {valB, true}; }
@@ -257,19 +250,19 @@ QueryResult Database::execute(const string& query) {
         if (op == "MSET") { setAt(c.array, a, valB); return {valB, true}; }
         if (op == "MLEN") return {to_string(arrayLength(c.array)), false};
     }
-    
+
     if (type == 'F' || type == 'L') {
         auto get = [&](int index) { return type == 'F' ? getSingly(c.singly, index) : getDoubly(c.doubly, index); };
         auto add = [&](int index, const string& value) { if (type == 'F') insertSingly(c.singly, index, value); else insertDoubly(c.doubly, index, value); };
         auto erase = [&](int index) { return type == 'F' ? eraseSingly(c.singly, index) : eraseDoubly(c.doubly, index); };
         auto length = [&] { return type == 'F' ? singlyLength(c.singly) : doublyLength(c.doubly); };
-        
+
         if (action == "PUSH" || action == "PUSHBACK") {
             if (type == 'F') pushBack(c.singly, valA); else pushBackDoubly(c.doubly, valA);
             return {valA, true};
         }
         if (action == "PUSHFRONT") { add(0, valA); return {valA, true}; }
-        
+
         // ИСПРАВЛЕННАЯ ЛОГИКА ДЛЯ ВСТАВКИ ПЕРЕД/ПОСЛЕ ЗНАЧЕНИЯ
         if (action == "PUSHBEFORE" || action == "PUSHAFTER") {
             int idx = type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA);
@@ -277,7 +270,7 @@ QueryResult Database::execute(const string& query) {
             add(idx + (action == "PUSHAFTER" ? 1 : 0), valB);
             return {valB, true};
         }
-        
+
         if (action == "GET") return {get(a), false};
         if (action == "FIND") return {to_string(type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA)), false};
         if (action == "LEN") return {to_string(length()), false};
@@ -297,7 +290,7 @@ QueryResult Database::execute(const string& query) {
         }
         return {erase(index), true};
     }
-    
+
     if (type == 'S') {
         if (op == "SPUSH") { push(c.stack, valA); return {valA, true}; }
         if (op == "SPOP") return {pop(c.stack), true};
@@ -310,7 +303,7 @@ QueryResult Database::execute(const string& query) {
         if (!c.queue.head) throw out_of_range("Empty queue");
         return {c.queue.head->data, false};
     }
-    
+
     if (op == "TSHOW") return {treeDiagram(c.tree), false};
     bool exists = searchAVL(c.tree, a);
     if (op == "TINSERT") { c.tree = insert(c.tree, a); return {exists ? "FALSE" : "TRUE", !exists}; }
