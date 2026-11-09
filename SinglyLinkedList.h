@@ -1,21 +1,30 @@
 #ifndef SINGLY_LINKED_LIST_H
 #define SINGLY_LINKED_LIST_H
 
+#include <string>
+
 struct SinglyNode {
-    int data;
+    std::string data; 
     SinglyNode* next;
 };
 
-void pushFront(SinglyNode*& head, int value);
-void pushBack(SinglyNode*& head, int value);
+// Базовые операции
+void pushFront(SinglyNode*& head, const std::string& value);
+void pushBack(SinglyNode*& head, const std::string& value);
 void popFront(SinglyNode*& head);
 void printList(SinglyNode* head);
 void freeList(SinglyNode*& head);
 
+// Добавленные операции (4 способа добавления)
+void pushBefore(SinglyNode*& head, const std::string& target, const std::string& value);
+void pushAfter(SinglyNode*& head, const std::string& target, const std::string& value);
+
+// Остальные операции
 int singlyLength(const SinglyNode* head);
-int getSingly(const SinglyNode* head, int index);
-int findSingly(const SinglyNode* head, int value);
-void insertSingly(SinglyNode*& head, int index, int value);
-int eraseSingly(SinglyNode*& head, int index);
-bool eraseSinglyValue(SinglyNode*& head, int value);
+std::string getSingly(const SinglyNode* head, int index);
+int findSingly(const SinglyNode* head, const std::string& value);
+void insertSingly(SinglyNode*& head, int index, const std::string& value);
+std::string eraseSingly(SinglyNode*& head, int index);
+bool eraseSinglyValue(SinglyNode*& head, const std::string& value); 
+
 #endif
