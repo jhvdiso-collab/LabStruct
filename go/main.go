@@ -17,7 +17,7 @@ type Container struct {
 	list  List
 	stack Stack
 	queue Queue
-	tree  []int // C++ owns AVL operations; retain its records unchanged.
+	tree  []int // Дерево остается на числах (int)
 }
 type Database map[string]*Container
 
@@ -27,33 +27,29 @@ func newContainer(kind byte) (*Container, error) {
 	}
 	return &Container{kind: kind, list: List{doubly: kind == 'L'}}, nil
 }
-func (c *Container) Values(reverse bool) []int {
+func (c *Container) Values(reverse bool) []string {
 	switch c.kind {
 	case 'M':
 		return c.array.data[:c.array.size]
 	case 'F', 'L':
 		return c.list.Values(reverse)
 	case 'S':
-		out := []int{}
+		out := []string{}
 		for p := c.stack.top; p != nil; p = p.next {
 			out = append(out, p.value)
 		}
 		return out
 	case 'Q':
-		out := []int{}
+		out := []string{}
 		for p := c.queue.head; p != nil; p = p.next {
 			out = append(out, p.value)
 		}
 		return out
 	default:
-		return c.tree
+		return nil // Для дерева не используется
 	}
 }
 func number(s string) (int, error) {
-	// Keep exactly the same signed 32-bit input grammar as the C++ CLI.
-	if s == "" || s[0] == '+' {
-		return 0, fmt.Errorf("expected a 32-bit integer")
-	}
 	v, e := strconv.ParseInt(s, 10, 32)
 	return int(v), e
 }
@@ -103,41 +99,15 @@ func load(path string) (Database, error) {
 		if err != nil {
 			return nil, err
 		}
-		values := make([]int, count)
-		for i, s := range row[3:] {
-			values[i], err = number(s)
-			if err != nil {
-				return nil, err
-			}
-		}
-		switch c.kind {
-		case 'M':
-			for _, v := range values {
-				c.array.Push(v)
-			}
-		case 'F', 'L':
-			// Loading uses a tail cursor, so even a singly linked list loads in O(n).
-			for _, v := range values {
-				node := &Link{value: v}
-				if c.list.tail == nil {
-					c.list.head = node
-				} else {
-					c.list.tail.next = node
-					if c.list.doubly {
-						node.prev = c.list.tail
-					}
+		// Если это дерево, парсим как int, иначе как string
+		if c.kind == 'T' {
+			values := make([]int, count)
+			for i, s := range row[3:] {
+				values[i], err = number(s)
+				if err != nil {
+					return nil, err
 				}
-				c.list.tail = node
 			}
-		case 'S':
-			for i := len(values) - 1; i >= 0; i-- {
-				c.stack.Push(values[i])
-			}
-		case 'Q':
-			for _, v := range values {
-				c.queue.Push(v)
-			}
-		case 'T':
 			seen := map[int]bool{}
 			for _, v := range values {
 				if seen[v] {
@@ -146,6 +116,38 @@ func load(path string) (Database, error) {
 				seen[v] = true
 			}
 			c.tree = values
+		} else {
+			values := make([]string, count)
+			for i, s := range row[3:] {
+				values[i] = s
+			}
+			switch c.kind {
+			case 'M':
+				for _, v := range values {
+					c.array.Push(v)
+				}
+			case 'F', 'L':
+				for _, v := range values {
+					node := &Link{value: v}
+					if c.list.tail == nil {
+						c.list.head = node
+					} else {
+						c.list.tail.next = node
+						if c.list.doubly {
+							node.prev = c.list.tail
+						}
+					}
+					c.list.tail = node
+				}
+			case 'S':
+				for i := len(values) - 1; i >= 0; i-- {
+					c.stack.Push(values[i])
+				}
+			case 'Q':
+				for _, v := range values {
+					c.queue.Push(v)
+				}
+			}
 		}
 		db[row[1]] = c
 		if e == io.EOF {
@@ -171,13 +173,24 @@ func (db Database) Save(path string) (err error) {
 	sort.Strings(names)
 	for _, name := range names {
 		c := db[name]
-		values := c.Values(false)
-		if _, err = fmt.Fprintf(w, "%c %s %d", c.kind, name, len(values)); err != nil {
-			return err
-		}
-		for _, v := range values {
-			if _, err = fmt.Fprintf(w, " %d", v); err != nil {
+		if c.kind == 'T' {
+			if _, err = fmt.Fprintf(w, "%c %s %d", c.kind, name, len(c.tree)); err != nil {
 				return err
+			}
+			for _, v := range c.tree {
+				if _, err = fmt.Fprintf(w, " %d", v); err != nil {
+					return err
+				}
+			}
+		} else {
+			values := c.Values(false)
+			if _, err = fmt.Fprintf(w, "%c %s %d", c.kind, name, len(values)); err != nil {
+				return err
+			}
+			for _, v := range values {
+				if _, err = fmt.Fprintf(w, " %s", v); err != nil {
+					return err
+				}
 			}
 		}
 		if _, err = fmt.Fprintln(w); err != nil {
@@ -194,7 +207,7 @@ func (db Database) Save(path string) (err error) {
 }
 func commands() map[string]int {
 	m := map[string]int{"PRINT": 2, "MPUSH": 3, "MINSERT": 4, "MGET": 3, "MDEL": 3, "MSET": 4, "MLEN": 2, "SPUSH": 3, "SPOP": 2, "SGET": 2, "QPUSH": 3, "QPOP": 2, "QGET": 2}
-	for _, c := range "MFLSQ" {
+	for _, c := range "MFLSQT" { // Добавлено T для создания
 		m[string(c)+"CREATE"] = 2
 	}
 	for _, c := range "FL" {
@@ -210,7 +223,7 @@ func commands() map[string]int {
 	}
 	return m
 }
-func result(v int, changed bool, e error) (string, bool, error) { return strconv.Itoa(v), changed, e }
+
 func (db Database) Execute(query string) (string, bool, error) {
 	args := strings.Fields(query)
 	if len(args) == 0 {
@@ -219,25 +232,26 @@ func (db Database) Execute(query string) (string, bool, error) {
 	op := args[0]
 	n, ok := commands()[op]
 	if !ok {
-		return "", false, fmt.Errorf("unknown command (AVL operations are available in C++)")
+		return "", false, fmt.Errorf("unknown command")
 	}
 	if len(args) != n || !validName(args[1]) {
 		return "", false, fmt.Errorf("invalid arguments")
 	}
-	a, b := 0, 0
-	var e error
+
+	// Парсим аргументы. Если это число — используем как индекс (a). Если нет — как строку (valA).
+	a := 0
+	valA := ""
 	if n > 2 {
-		a, e = number(args[2])
-		if e != nil {
-			return "", false, e
+		valA = args[2]
+		if v, err := number(args[2]); err == nil {
+			a = v
 		}
 	}
+	valB := ""
 	if n > 3 {
-		b, e = number(args[3])
-		if e != nil {
-			return "", false, e
-		}
+		valB = args[3]
 	}
+
 	c := db[args[1]]
 	if op == "PRINT" {
 		if c == nil {
@@ -260,10 +274,7 @@ func (db Database) Execute(query string) (string, bool, error) {
 		if action != "CREATE" && action != "PUSH" && action != "PUSHFRONT" && action != "PUSHBACK" {
 			return "", false, fmt.Errorf("container not found; use CREATE or PUSH")
 		}
-		c, e = newContainer(kind)
-		if e != nil {
-			return "", false, e
-		}
+		c, _ = newContainer(kind)
 		db[args[1]] = c
 	}
 	if action == "CREATE" {
@@ -273,50 +284,52 @@ func (db Database) Execute(query string) (string, bool, error) {
 	case 'M':
 		switch action {
 		case "PUSH":
-			c.array.Push(a)
-			return result(a, true, nil)
+			c.array.Push(valA)
+			return valA, true, nil
 		case "INSERT":
-			return result(b, true, c.array.Insert(a, b))
+			return valB, true, c.array.Insert(a, valB)
 		case "GET":
 			v, e := c.array.Get(a)
-			return result(v, false, e)
+			return v, false, e
 		case "DEL":
 			v, e := c.array.Delete(a)
-			return result(v, true, e)
+			return v, true, e
 		case "SET":
-			return result(b, true, c.array.Set(a, b))
+			return valB, true, c.array.Set(a, valB)
 		case "LEN":
-			return result(c.array.size, false, nil)
+			return strconv.Itoa(c.array.size), false, nil
 		}
 	case 'F', 'L':
 		switch action {
 		case "PUSH", "PUSHBACK":
-			c.list.PushBack(a)
-			return result(a, true, nil)
+			c.list.PushBack(valA)
+			return valA, true, nil
 		case "PUSHFRONT":
-			return result(a, true, c.list.Insert(0, a))
+			return valA, true, c.list.Insert(0, valA)
 		case "PUSHBEFORE", "PUSHAFTER":
-			if _, e := c.list.At(a); e != nil {
-				return "", false, e
+			// Поиск по значению!
+			idx := c.list.Find(valA)
+			if idx == -1 {
+				return "", false, fmt.Errorf("element not found")
 			}
 			if action == "PUSHAFTER" {
-				a++
+				idx++
 			}
-			return result(b, true, c.list.Insert(a, b))
+			return valB, true, c.list.Insert(idx, valB)
 		case "GET":
 			p, e := c.list.At(a)
 			if e != nil {
 				return "", false, e
 			}
-			return result(p.value, false, nil)
+			return p.value, false, nil
 		case "FIND":
-			return result(c.list.Find(a), false, nil)
+			return strconv.Itoa(c.list.Find(valA)), false, nil
 		case "LEN":
-			return result(c.list.Len(), false, nil)
+			return strconv.Itoa(c.list.Len()), false, nil
 		case "REVERSE":
 			return fmt.Sprint(c.list.Values(true)), false, nil
 		case "DELVAL":
-			i := c.list.Find(a)
+			i := c.list.Find(valA)
 			if i < 0 {
 				return "FALSE", false, nil
 			}
@@ -326,7 +339,7 @@ func (db Database) Execute(query string) (string, bool, error) {
 			a = 0
 		case "DELBACK":
 			v, e := c.list.PopBack()
-			return result(v, true, e)
+			return v, true, e
 		case "DELBEFORE", "DELAFTER":
 			if _, e := c.list.At(a); e != nil {
 				return "", false, e
@@ -338,29 +351,29 @@ func (db Database) Execute(query string) (string, bool, error) {
 			}
 		}
 		v, e := c.list.Delete(a)
-		return result(v, true, e)
+		return v, true, e
 	case 'S':
 		if action == "PUSH" {
-			c.stack.Push(a)
-			return result(a, true, nil)
+			c.stack.Push(valA)
+			return valA, true, nil
 		}
 		if action == "POP" {
 			v, e := c.stack.Pop()
-			return result(v, true, e)
+			return v, true, e
 		}
 		v, e := c.stack.Peek()
-		return result(v, false, e)
+		return v, false, e
 	case 'Q':
 		if action == "PUSH" {
-			c.queue.Push(a)
-			return result(a, true, nil)
+			c.queue.Push(valA)
+			return valA, true, nil
 		}
 		if action == "POP" {
 			v, e := c.queue.Pop()
-			return result(v, true, e)
+			return v, true, e
 		}
 		v, e := c.queue.Peek()
-		return result(v, false, e)
+		return v, false, e
 	}
 	return "", false, fmt.Errorf("unknown command")
 }
