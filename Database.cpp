@@ -17,6 +17,7 @@ int number(const string& s) {
         throw invalid_argument("Expected a 32-bit integer: " + s);
     return value;
 }
+
 bool validName(const string& s) {
     if (s.empty()) return false;
     for (unsigned char c : s)
@@ -24,11 +25,13 @@ bool validName(const string& s) {
               (c >= '0' && c <= '9') || c == '_' || c == '-')) return false;
     return true;
 }
+
 void inorder(const Node* p, vector<int>& out) {
     if (!p) return;
     inorder(p->left, out); out.push_back(p->key); inorder(p->right, out);
 }
-string format(const vector<int>& values) {
+
+string format(const vector<string>& values) {
     ostringstream out;
     out << '[';
     for (size_t i = 0; i < values.size(); ++i) {
@@ -38,6 +41,18 @@ string format(const vector<int>& values) {
     out << ']';
     return out.str();
 }
+
+string formatTree(const vector<int>& values) {
+    ostringstream out;
+    out << '[';
+    for (size_t i = 0; i < values.size(); ++i) {
+        if (i) out << ' ';
+        out << values[i];
+    }
+    out << ']';
+    return out.str();
+}
+
 void drawTree(const Node* node, const string& indent, const string& label, ostringstream& out) {
     if (!node) return;
     int leftHeight = node->left ? node->left->height : 0;
@@ -47,6 +62,7 @@ void drawTree(const Node* node, const string& indent, const string& label, ostri
     drawTree(node->left, indent + "    ", "L: ", out);
     drawTree(node->right, indent + "    ", "R: ", out);
 }
+
 string treeDiagram(const Node* root) {
     if (!root) return "[]";
     ostringstream out;
@@ -55,6 +71,7 @@ string treeDiagram(const Node* root) {
     result.pop_back();
     return result;
 }
+
 const map<string, int>& commands() {
     static const map<string, int> result = [] {
         map<string, int> m = {
@@ -78,16 +95,19 @@ const map<string, int>& commands() {
     return result;
 }
 }
+
 Container::Container(char kind) : type(kind) {
     if (string("MFLSQT").find(type) == string::npos) throw invalid_argument("Unknown type");
     if (type == 'M') initArray(array);
 }
+
 Container::~Container() {
     freeArray(array); freeList(singly); freeDoublyList(doubly);
     freeStack(stack); freeQueue(queue); freeMemory(tree);
 }
-vector<int> Container::values(bool reverseOrder) const {
-    vector<int> out;
+
+vector<string> Container::values(bool reverseOrder) const {
+    vector<string> out;
     switch (type) {
     case 'M': for (int i = 0; i < array.size; ++i) out.push_back(array.data[i]); break;
     case 'F': for (auto p = singly; p; p = p->next) out.push_back(p->data); break;
@@ -100,11 +120,18 @@ vector<int> Container::values(bool reverseOrder) const {
         break;
     case 'S': for (auto p = stack; p; p = p->next) out.push_back(p->data); break;
     case 'Q': for (auto p = queue.head; p; p = p->next) out.push_back(p->data); break;
-    case 'T': inorder(tree, out); break;
+    default: break;
     }
     if (reverseOrder) reverse(out.begin(), out.end());
     return out;
 }
+
+vector<int> Container::treeValues() const {
+    vector<int> out;
+    if (type == 'T') inorder(tree, out);
+    return out;
+}
+
 void Database::load(const string& path) {
     map<string, unique_ptr<Container>> loaded;
     if (!filesystem::exists(path)) { containers.clear(); return; }
@@ -120,20 +147,22 @@ void Database::load(const string& path) {
         int count = number(countText);
         if (count < 0) throw runtime_error("Negative element count");
         auto item = make_unique<Container>(type[0]);
-        vector<int> stackValues;
+        vector<string> stackValues;
         SinglyNode** tail = &item->singly;
         for (int i = 0; i < count; ++i) {
             if (!(row >> token)) throw runtime_error("Missing element");
-            int value = number(token);
             switch (item->type) {
-            case 'M': pushBack(item->array, value); break;
-            case 'F': *tail = new SinglyNode{value, nullptr}; tail = &(*tail)->next; break;
-            case 'L': pushBackDoubly(item->doubly, value); break;
-            case 'S': stackValues.push_back(value); break;
-            case 'Q': pushQueue(item->queue, value); break;
-            case 'T':
+            case 'M': pushBack(item->array, token); break;
+            case 'F': *tail = new SinglyNode{token, nullptr}; tail = &(*tail)->next; break;
+            case 'L': pushBackDoubly(item->doubly, token); break;
+            case 'S': stackValues.push_back(token); break;
+            case 'Q': pushQueue(item->queue, token); break;
+            case 'T': {
+                int value = number(token);
                 if (searchAVL(item->tree, value)) throw runtime_error("Duplicate AVL key");
-                item->tree = insert(item->tree, value); break;
+                item->tree = insert(item->tree, value); 
+                break;
+            }
             }
         }
         if (row >> token) throw runtime_error("Extra data in record");
@@ -143,8 +172,8 @@ void Database::load(const string& path) {
     if (file.bad()) throw runtime_error("Data file read failed");
     containers.swap(loaded);
 }
+
 void Database::save(const string& path) const {
-    // A unique sibling temporary file keeps the old database intact on write errors.
     string pattern = path + ".tmp.XXXXXX";
     vector<char> temp(pattern.begin(), pattern.end()); temp.push_back('\0');
     int fd = mkstemp(temp.data());
@@ -156,9 +185,15 @@ void Database::save(const string& path) const {
         file.exceptions(ios::failbit | ios::badbit);
         file << "LABSTRUCT 1\n";
         for (const auto& entry : containers) {
-            auto values = entry.second->values();
-            file << entry.second->type << ' ' << entry.first << ' ' << values.size();
-            for (int value : values) file << ' ' << value;
+            if (entry.second->type == 'T') {
+                auto values = entry.second->treeValues();
+                file << entry.second->type << ' ' << entry.first << ' ' << values.size();
+                for (int value : values) file << ' ' << value;
+            } else {
+                auto values = entry.second->values();
+                file << entry.second->type << ' ' << entry.first << ' ' << values.size();
+                for (const string& value : values) file << ' ' << value;
+            }
             file << '\n';
         }
         file.close();
@@ -169,6 +204,7 @@ void Database::save(const string& path) const {
         throw;
     }
 }
+
 QueryResult Database::execute(const string& query) {
     istringstream in(query);
     vector<string> args;
@@ -179,11 +215,23 @@ QueryResult Database::execute(const string& query) {
     if (spec == commands().end()) throw invalid_argument("Unknown command: " + op);
     if (args.size() != static_cast<size_t>(spec->second)) throw invalid_argument("Wrong argument count");
     if (!validName(args[1])) throw invalid_argument("Invalid container name");
-    int a = args.size() > 2 ? number(args[2]) : 0;
-    int b = args.size() > 3 ? number(args[3]) : 0;
+
+
+    int a = 0;
+    if (args.size() > 2) {
+        try { a = number(args[2]); } catch(...) {  }
+    }
+    int b = 0;
+    if (args.size() > 3) {
+        try { b = number(args[3]); } catch(...) {}
+    }
+    string valA = args.size() > 2 ? args[2] : "";
+    string valB = args.size() > 3 ? args[3] : "";
+
     auto found = containers.find(args[1]);
     if (op == "PRINT") {
         if (found == containers.end()) throw invalid_argument("Container not found");
+        if (found->second->type == 'T') return {formatTree(found->second->treeValues()), false};
         return {format(found->second->values()), false};
     }
     char type = op == "ISMEMBER" ? 'T' : op[0];
@@ -199,56 +247,60 @@ QueryResult Database::execute(const string& query) {
     Container& c = *found->second;
     if (create) return {"OK", true};
     if (type == 'M') {
-        if (op == "MPUSH") { pushBack(c.array, a); return {to_string(a), true}; }
-        if (op == "MINSERT") { insertAt(c.array, a, b); return {to_string(b), true}; }
-        if (op == "MGET") return {to_string(getAt(c.array, a)), false};
-        if (op == "MDEL") return {to_string(eraseAt(c.array, a)), true};
-        if (op == "MSET") { setAt(c.array, a, b); return {to_string(b), true}; }
+        if (op == "MPUSH") { pushBack(c.array, valA); return {valA, true}; }
+        if (op == "MINSERT") { insertAt(c.array, a, valB); return {valB, true}; }
+        if (op == "MGET") return {getAt(c.array, a), false};
+        if (op == "MDEL") return {eraseAt(c.array, a), true};
+        if (op == "MSET") { setAt(c.array, a, valB); return {valB, true}; }
         if (op == "MLEN") return {to_string(arrayLength(c.array)), false};
     }
     if (type == 'F' || type == 'L') {
         auto get = [&](int index) { return type == 'F' ? getSingly(c.singly, index) : getDoubly(c.doubly, index); };
-        auto add = [&](int index, int value) { if (type == 'F') insertSingly(c.singly, index, value); else insertDoubly(c.doubly, index, value); };
+        auto add = [&](int index, const string& value) { if (type == 'F') insertSingly(c.singly, index, value); else insertDoubly(c.doubly, index, value); };
         auto erase = [&](int index) { return type == 'F' ? eraseSingly(c.singly, index) : eraseDoubly(c.doubly, index); };
         auto length = [&] { return type == 'F' ? singlyLength(c.singly) : doublyLength(c.doubly); };
+        
         if (action == "PUSH" || action == "PUSHBACK") {
-            if (type == 'F') pushBack(c.singly, a); else pushBackDoubly(c.doubly, a);
-            return {to_string(a), true};
+            if (type == 'F') pushBack(c.singly, valA); else pushBackDoubly(c.doubly, valA);
+            return {valA, true};
         }
-        if (action == "PUSHFRONT") { add(0, a); return {to_string(a), true}; }
+        if (action == "PUSHFRONT") { add(0, valA); return {valA, true}; }
         if (action == "PUSHBEFORE" || action == "PUSHAFTER") {
-            get(a); add(a + (action == "PUSHAFTER"), b); return {to_string(b), true};
+            // a - это индекс (или значение для поиска), b - это значение для вставки
+            // В задании сказано "вставка до/после <значение>", но в таблице args[2] — это индекс.
+            // Будем считать args[2] индексом, а args[3] - значением.
+            get(a); add(a + (action == "PUSHAFTER"), valB); return {valB, true};
         }
-        if (action == "GET") return {to_string(get(a)), false};
-        if (action == "FIND") return {to_string(type == 'F' ? findSingly(c.singly, a) : findDoubly(c.doubly, a)), false};
+        if (action == "GET") return {get(a), false};
+        if (action == "FIND") return {to_string(type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA)), false};
         if (action == "LEN") return {to_string(length()), false};
         if (action == "REVERSE") return {format(c.values(true)), false};
         if (action == "DELVAL") {
-            bool removed = type == 'F' ? eraseSinglyValue(c.singly, a) : eraseDoublyValue(c.doubly, a);
+            bool removed = type == 'F' ? eraseSinglyValue(c.singly, valA) : eraseDoublyValue(c.doubly, valA);
             return {removed ? "TRUE" : "FALSE", removed};
         }
         int index = a;
         if (action == "DELFRONT") index = 0;
         if (action == "DELBACK") {
-            if (type == 'L') return {to_string(popBackDoubly(c.doubly)), true};
+            if (type == 'L') return {popBackDoubly(c.doubly), true};
             index = length() - 1;
         }
         if (action == "DELBEFORE" || action == "DELAFTER") {
             get(a); index = a + (action == "DELAFTER" ? 1 : -1);
         }
-        return {to_string(erase(index)), true};
+        return {erase(index), true};
     }
     if (type == 'S') {
-        if (op == "SPUSH") { push(c.stack, a); return {to_string(a), true}; }
-        if (op == "SPOP") return {to_string(pop(c.stack)), true};
+        if (op == "SPUSH") { push(c.stack, valA); return {valA, true}; }
+        if (op == "SPOP") return {pop(c.stack), true};
         if (!c.stack) throw out_of_range("Empty stack");
-        return {to_string(c.stack->data), false};
+        return {c.stack->data, false};
     }
     if (type == 'Q') {
-        if (op == "QPUSH") { pushQueue(c.queue, a); return {to_string(a), true}; }
-        if (op == "QPOP") return {to_string(popQueue(c.queue)), true};
+        if (op == "QPUSH") { pushQueue(c.queue, valA); return {valA, true}; }
+        if (op == "QPOP") return {popQueue(c.queue), true};
         if (!c.queue.head) throw out_of_range("Empty queue");
-        return {to_string(c.queue.head->data), false};
+        return {c.queue.head->data, false};
     }
     if (op == "TSHOW") return {treeDiagram(c.tree), false};
     bool exists = searchAVL(c.tree, a);
