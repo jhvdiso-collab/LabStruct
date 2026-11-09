@@ -8,18 +8,17 @@ struct SinglyNode {
     SinglyNode* next;
 };
 
-// Базовые операции
 void pushFront(SinglyNode*& head, const std::string& value);
 void pushBack(SinglyNode*& head, const std::string& value);
 void popFront(SinglyNode*& head);
 void printList(SinglyNode* head);
 void freeList(SinglyNode*& head);
 
-// Добавленные операции (4 способа добавления)
+
 void pushBefore(SinglyNode*& head, const std::string& target, const std::string& value);
 void pushAfter(SinglyNode*& head, const std::string& target, const std::string& value);
 
-// Остальные операции
+
 int singlyLength(const SinglyNode* head);
 std::string getSingly(const SinglyNode* head, int index);
 int findSingly(const SinglyNode* head, const std::string& value);
