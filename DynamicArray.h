@@ -3,7 +3,7 @@
 #include <string>
 
 struct DynamicArray {
-    std::string* data; // Изменено на строки
+    std::string* data; 
     int size;
     int capacity;
 };
