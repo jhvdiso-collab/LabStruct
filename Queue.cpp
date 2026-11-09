@@ -1,44 +1,31 @@
-#include "Queue.h"
+#include "Stack.h"
 #include <stdexcept>
 #include <string>
 
 using namespace std;
 
-void initQueue(Queue& q) {
-    q.head = nullptr;
-    q.tail = nullptr;
+void push(StackNode*& top, const string& value) {
+    StackNode* newNode = new StackNode{value, top};
+    top = newNode;
 }
 
-bool isQueueEmpty(const Queue& q) {
-    return q.head == nullptr;
-}
-
-void pushQueue(Queue& q, const string& value) {
-    QueueNode* newNode = new QueueNode{value, nullptr};
-    if (q.tail != nullptr) {
-        q.tail->next = newNode;
-    } else {
-        q.head = newNode;
+string pop(StackNode*& top) {
+    if (isEmpty(top)) {
+        throw out_of_range("Empty stack");
     }
-    q.tail = newNode;
-}
-
-string popQueue(Queue& q) {
-    if (isQueueEmpty(q)) {
-        throw out_of_range("Empty queue");
-    }
-    QueueNode* temp = q.head;
+    StackNode* temp = top;
     string value = temp->data;
-    q.head = q.head->next;
-    if (q.head == nullptr) {
-        q.tail = nullptr;
-    }
+    top = top->next;
     delete temp;
     return value;
 }
 
-void freeQueue(Queue& q) {
-    while (!isQueueEmpty(q)) {
-        popQueue(q);
+bool isEmpty(StackNode* top) {
+    return top == nullptr;
+}
+
+void freeStack(StackNode*& top) {
+    while (!isEmpty(top)) {
+        pop(top);
     }
 }
