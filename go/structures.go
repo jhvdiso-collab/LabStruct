@@ -2,32 +2,31 @@ package main
 
 import "fmt"
 
-// Array uses a separately managed logical length and backing allocation.
 type Array struct {
-	data []int
+	data []string
 	size int
 }
 
-func (a *Array) Push(v int) {
+func (a *Array) Push(v string) {
 	if a.size == len(a.data) {
 		capacity := len(a.data) * 2
 		if capacity == 0 {
 			capacity = 1
 		}
-		data := make([]int, capacity)
+		data := make([]string, capacity)
 		copy(data, a.data[:a.size])
 		a.data = data
 	}
 	a.data[a.size] = v
 	a.size++
 }
-func (a *Array) Get(i int) (int, error) {
+func (a *Array) Get(i int) (string, error) {
 	if i < 0 || i >= a.size {
-		return 0, fmt.Errorf("array index out of range")
+		return "", fmt.Errorf("array index out of range")
 	}
 	return a.data[i], nil
 }
-func (a *Array) Insert(i, v int) error {
+func (a *Array) Insert(i int, v string) error {
 	if i < 0 || i > a.size {
 		return fmt.Errorf("array index out of range")
 	}
@@ -36,16 +35,16 @@ func (a *Array) Insert(i, v int) error {
 	a.data[i] = v
 	return nil
 }
-func (a *Array) Delete(i int) (int, error) {
+func (a *Array) Delete(i int) (string, error) {
 	v, e := a.Get(i)
 	if e != nil {
-		return 0, e
+		return "", e
 	}
 	copy(a.data[i:a.size-1], a.data[i+1:a.size])
 	a.size--
 	return v, nil
 }
-func (a *Array) Set(i, v int) error {
+func (a *Array) Set(i int, v string) error {
 	if _, e := a.Get(i); e != nil {
 		return e
 	}
@@ -54,7 +53,7 @@ func (a *Array) Set(i, v int) error {
 }
 
 type Link struct {
-	value      int
+	value      string 
 	next, prev *Link
 }
 type List struct {
@@ -82,17 +81,17 @@ func (l *List) Len() int {
 	}
 	return n
 }
-func (l *List) Find(v int) int {
+func (l *List) Find(v string) int { 
 	i := 0
 	for p := l.head; p != nil; p = p.next {
-		i++
 		if p.value == v {
-			return i - 1
+			return i
 		}
+		i++
 	}
 	return -1
 }
-func (l *List) PushBack(v int) {
+func (l *List) PushBack(v string) {
 	node := &Link{value: v}
 	if l.head == nil {
 		l.head = node
@@ -111,7 +110,7 @@ func (l *List) PushBack(v int) {
 	}
 	l.tail = node
 }
-func (l *List) Insert(i, v int) error {
+func (l *List) Insert(i int, v string) error {
 	if i == 0 {
 		node := &Link{value: v, next: l.head}
 		if l.head != nil && l.doubly {
@@ -140,9 +139,9 @@ func (l *List) Insert(i, v int) error {
 	}
 	return nil
 }
-func (l *List) Delete(i int) (int, error) {
+func (l *List) Delete(i int) (string, error) {
 	if i < 0 {
-		return 0, fmt.Errorf("list index out of range")
+		return "", fmt.Errorf("list index out of range")
 	}
 	var prev *Link
 	node := l.head
@@ -150,12 +149,12 @@ func (l *List) Delete(i int) (int, error) {
 		var e error
 		prev, e = l.At(i - 1)
 		if e != nil {
-			return 0, e
+			return "", e
 		}
 		node = prev.next
 	}
 	if node == nil {
-		return 0, fmt.Errorf("list index out of range")
+		return "", fmt.Errorf("list index out of range")
 	}
 	if prev == nil {
 		l.head = node.next
@@ -169,12 +168,12 @@ func (l *List) Delete(i int) (int, error) {
 	}
 	return node.value, nil
 }
-func (l *List) PopBack() (int, error) {
+func (l *List) PopBack() (string, error) {
 	if !l.doubly {
 		return l.Delete(l.Len() - 1)
 	}
 	if l.tail == nil {
-		return 0, fmt.Errorf("empty list")
+		return "", fmt.Errorf("empty list")
 	}
 	node := l.tail
 	l.tail = node.prev
@@ -185,8 +184,8 @@ func (l *List) PopBack() (int, error) {
 	}
 	return node.value, nil
 }
-func (l *List) Values(reverse bool) []int {
-	out := []int{}
+func (l *List) Values(reverse bool) []string {
+	out := []string{}
 	if reverse && l.doubly {
 		for p := l.tail; p != nil; p = p.prev {
 			out = append(out, p.value)
@@ -206,14 +205,14 @@ func (l *List) Values(reverse bool) []int {
 
 type Stack struct{ top *Link }
 
-func (s *Stack) Push(v int) { s.top = &Link{value: v, next: s.top} }
-func (s *Stack) Peek() (int, error) {
+func (s *Stack) Push(v string) { s.top = &Link{value: v, next: s.top} }
+func (s *Stack) Peek() (string, error) {
 	if s.top == nil {
-		return 0, fmt.Errorf("empty stack")
+		return "", fmt.Errorf("empty stack")
 	}
 	return s.top.value, nil
 }
-func (s *Stack) Pop() (int, error) {
+func (s *Stack) Pop() (string, error) {
 	v, e := s.Peek()
 	if e == nil {
 		s.top = s.top.next
@@ -223,7 +222,7 @@ func (s *Stack) Pop() (int, error) {
 
 type Queue struct{ head, tail *Link }
 
-func (q *Queue) Push(v int) {
+func (q *Queue) Push(v string) {
 	p := &Link{value: v}
 	if q.tail == nil {
 		q.head = p
@@ -232,13 +231,13 @@ func (q *Queue) Push(v int) {
 	}
 	q.tail = p
 }
-func (q *Queue) Peek() (int, error) {
+func (q *Queue) Peek() (string, error) {
 	if q.head == nil {
-		return 0, fmt.Errorf("empty queue")
+		return "", fmt.Errorf("empty queue")
 	}
 	return q.head.value, nil
 }
-func (q *Queue) Pop() (int, error) {
+func (q *Queue) Pop() (string, error) {
 	v, e := q.Peek()
 	if e == nil {
 		q.head = q.head.next
