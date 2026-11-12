@@ -121,7 +121,7 @@ vector<string> Container::values(bool reverseOrder) const {
         break;
     case 'S': for (auto p = stack; p; p = p->next) out.push_back(p->data); break;
     case 'Q': for (auto p = queue.head; p; p = p->next) out.push_back(p->data); break;
-    default: break; // Для дерева этот метод не используется
+    default: break; 
     }
     if (reverseOrder) reverse(out.begin(), out.end());
     return out;
@@ -263,7 +263,6 @@ QueryResult Database::execute(const string& query) {
         }
         if (action == "PUSHFRONT") { add(0, valA); return {valA, true}; }
 
-        // ИСПРАВЛЕННАЯ ЛОГИКА ДЛЯ ВСТАВКИ ПЕРЕД/ПОСЛЕ ЗНАЧЕНИЯ
         if (action == "PUSHBEFORE" || action == "PUSHAFTER") {
             int idx = type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA);
             if (idx == -1) throw invalid_argument("Element not found");
@@ -271,7 +270,7 @@ QueryResult Database::execute(const string& query) {
             return {valB, true};
         }
 
-        if (action == "GET") return {get(a), false};
+        if (action == "GET") return {get(number(valA)), false};
         if (action == "FIND") return {to_string(type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA)), false};
         if (action == "LEN") return {to_string(length()), false};
         if (action == "REVERSE") return {format(c.values(true)), false};
@@ -279,14 +278,16 @@ QueryResult Database::execute(const string& query) {
             bool removed = type == 'F' ? eraseSinglyValue(c.singly, valA) : eraseDoublyValue(c.doubly, valA);
             return {removed ? "TRUE" : "FALSE", removed};
         }
-        int index = a;
+        int index = action == "DEL" ? number(valA) : 0;
         if (action == "DELFRONT") index = 0;
         if (action == "DELBACK") {
             if (type == 'L') return {popBackDoubly(c.doubly), true};
             index = length() - 1;
         }
         if (action == "DELBEFORE" || action == "DELAFTER") {
-            get(a); index = a + (action == "DELAFTER" ? 1 : -1);
+            int target = type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA);
+            if (target == -1) throw invalid_argument("Element not found");
+            index = target + (action == "DELAFTER" ? 1 : -1);
         }
         return {erase(index), true};
     }
