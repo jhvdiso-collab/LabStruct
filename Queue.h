@@ -1,8 +1,9 @@
 #ifndef QUEUE_H
 #define QUEUE_H
+#include <string>
 
 struct QueueNode {
-    int data;
+    std::string data; 
     QueueNode* next;
 };
 
@@ -12,8 +13,8 @@ struct Queue {
 };
 
 void initQueue(Queue& q);
-void pushQueue(Queue& q, int value);
-int popQueue(Queue& q);
+void pushQueue(Queue& q, const std::string& value);
+std::string popQueue(Queue& q);
 bool isQueueEmpty(const Queue& q);
 void freeQueue(Queue& q);
 
