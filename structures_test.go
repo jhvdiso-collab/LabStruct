@@ -3,22 +3,23 @@ package main
 import (
 	"math/rand"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
 func TestListInvariants(t *testing.T) {
 	for _, doubly := range []bool{false, true} {
 		l := List{doubly: doubly}
-		model := []int{}
+		model := []string{}
 		r := rand.New(rand.NewSource(2026))
 		for step := 0; step < 2000; step++ {
 			if len(model) == 0 || r.Intn(2) == 0 {
 				pos := r.Intn(len(model) + 1)
-				v := r.Intn(100)
+				v := strconv.Itoa(r.Intn(100))
 				if e := l.Insert(pos, v); e != nil {
 					t.Fatal(e)
 				}
-				model = append(model, 0)
+				model = append(model, "")
 				copy(model[pos+1:], model[pos:len(model)-1])
 				model[pos] = v
 			} else {
@@ -56,16 +57,16 @@ func TestListInvariants(t *testing.T) {
 }
 func TestArrayAgainstSlice(t *testing.T) {
 	a := Array{}
-	model := []int{}
+	model := []string{}
 	r := rand.New(rand.NewSource(42))
 	for step := 0; step < 2000; step++ {
 		if len(model) == 0 || r.Intn(2) == 0 {
 			i := r.Intn(len(model) + 1)
-			v := r.Intn(100)
+			v := strconv.Itoa(r.Intn(100))
 			if e := a.Insert(i, v); e != nil {
 				t.Fatal(e)
 			}
-			model = append(model, 0)
+			model = append(model, "")
 			copy(model[i+1:], model[i:len(model)-1])
 			model[i] = v
 		} else {

@@ -63,8 +63,8 @@ class CLI(unittest.TestCase):
             self.query(f'{p}PUSH {name} 20', '20')
             self.query(f'{p}PUSHFRONT {name} 10', '10')
             self.query(f'{p}PUSHBACK {name} 40', '40')
-            self.query(f'{p}PUSHBEFORE {name} 2 30', '30')
-            self.query(f'{p}PUSHAFTER {name} 1 25', '25')
+            self.query(f'{p}PUSHBEFORE {name} 40 30', '30')
+            self.query(f'{p}PUSHAFTER {name} 20 25', '25')
             self.query(f'PRINT {name}', '[10 20 25 30 40]')
             self.query(f'{p}REVERSE {name}', '[40 30 25 20 10]')
             self.query(f'{p}GET {name} 2', '25')
@@ -74,8 +74,8 @@ class CLI(unittest.TestCase):
             for command in [f'{p}DELBEFORE {name} 0', f'{p}DELAFTER {name} 4',
                             f'{p}PUSHAFTER {name} -1 3', f'{p}PUSHBEFORE {name} 5 3']:
                 self.query(command, fail=True)
-            self.query(f'{p}DELBEFORE {name} 2', '20')
-            self.query(f'{p}DELAFTER {name} 1', '30')
+            self.query(f'{p}DELBEFORE {name} 25', '20')
+            self.query(f'{p}DELAFTER {name} 25', '30')
             self.query(f'{p}DELVAL {name} 25', 'TRUE')
             self.query(f'{p}DELVAL {name} 99', 'FALSE')
             self.query(f'{p}DELFRONT {name}', '10')
@@ -139,8 +139,10 @@ class CLI(unittest.TestCase):
 
     def test_invalid_commands(self):
         self.query('PRINT missing', fail=True)
-        self.query('MPUSH a 2147483648', fail=True)
-        self.query('MPUSH a nope', fail=True)
+        self.query('MPUSH a 2147483648', '2147483648')
+        self.query('MDEL a 0', '2147483648')
+        self.query('MPUSH a nope', 'nope')
+        self.query('MDEL a 0', 'nope')
         self.query('MPUSH a 1 extra', fail=True)
         self.query('MPUSH bad/name 1', fail=True)
         self.query('MPUSH a -2147483648', '-2147483648')
@@ -153,7 +155,7 @@ class CLI(unittest.TestCase):
         for data in ['', 'wrong\n', 'LABSTRUCT 1\nM a 2 1\n',
                      'LABSTRUCT 1\nM a 1 1 extra\n', 'LABSTRUCT 1\nX a 0\n',
                      'LABSTRUCT 1\nM a 0\nM a 0\n', 'LABSTRUCT 1\nT t 2 1 1\n',
-                     'LABSTRUCT 1\nM a -1\n', 'LABSTRUCT 1\nM a 1 2147483648\n']:
+                     'LABSTRUCT 1\nM a -1\n']:
             self.file.write_text(data)
             self.query('MPUSH b 1', fail=True)
 
