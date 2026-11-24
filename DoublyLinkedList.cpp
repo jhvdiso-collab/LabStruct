@@ -35,7 +35,7 @@ void pushBeforeDoubly(DoublyList& list, const string& target, const string& valu
     while (curr != nullptr && curr->data != target) {
         curr = curr->next;
     }
-    if (curr == nullptr) return;
+    if (curr == nullptr) throw invalid_argument("Element not found");
     if (curr == list.head) {
         pushFrontDoubly(list, value);
         return;
@@ -50,7 +50,7 @@ void pushAfterDoubly(DoublyList& list, const string& target, const string& value
     while (curr != nullptr && curr->data != target) {
         curr = curr->next;
     }
-    if (curr == nullptr) return;
+    if (curr == nullptr) throw invalid_argument("Element not found");
     if (curr == list.tail) {
         pushBackDoubly(list, value);
         return;
@@ -190,4 +190,16 @@ string popBackDoubly(DoublyList& list) {
         throw std::out_of_range("Empty list");
     }
     return unlinkDoubly(list, list.tail);
+}
+
+string eraseBeforeDoubly(DoublyList& list, const string& target) {
+    int index = findDoubly(list, target);
+    if (index < 0) throw invalid_argument("Element not found");
+    return eraseDoubly(list, index - 1);
+}
+
+string eraseAfterDoubly(DoublyList& list, const string& target) {
+    int index = findDoubly(list, target);
+    if (index < 0) throw invalid_argument("Element not found");
+    return eraseDoubly(list, index + 1);
 }

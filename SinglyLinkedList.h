@@ -26,4 +26,6 @@ void insertSingly(SinglyNode*& head, int index, const std::string& value);
 std::string eraseSingly(SinglyNode*& head, int index);
 bool eraseSinglyValue(SinglyNode*& head, const std::string& value); 
 
+std::string eraseBefore(SinglyNode*& head, const std::string& target);
+std::string eraseAfter(SinglyNode*& head, const std::string& target);
 #endif

@@ -207,7 +207,7 @@ func (db Database) Save(path string) (err error) {
 }
 func commands() map[string]int {
 	m := map[string]int{"PRINT": 2, "MPUSH": 3, "MINSERT": 4, "MGET": 3, "MDEL": 3, "MSET": 4, "MLEN": 2, "SPUSH": 3, "SPOP": 2, "SGET": 2, "QPUSH": 3, "QPOP": 2, "QGET": 2}
-	for _, c := range "MFLSQT" { // Добавлено T для создания
+	for _, c := range "MFLSQ" { // Добавлено T для создания
 		m[string(c)+"CREATE"] = 2
 	}
 	for _, c := range "FL" {
@@ -217,7 +217,7 @@ func commands() map[string]int {
 		for _, op := range []string{"PUSHBEFORE", "PUSHAFTER"} {
 			m[string(c)+op] = 4
 		}
-		for _, op := range []string{"DELFRONT", "DELBACK", "LEN", "REVERSE"} {
+		for _, op := range []string{"DELFRONT", "DELBACK", "LEN", "REVERSE", "GETFRONT", "GETBACK"} {
 			m[string(c)+op] = 2
 		}
 	}
@@ -243,8 +243,11 @@ func (db Database) Execute(query string) (string, bool, error) {
 	valA := ""
 	if n > 2 {
 		valA = args[2]
-		if v, err := number(args[2]); err == nil {
-			a = v
+		if op == "MINSERT" || op == "MGET" || op == "MDEL" || op == "MSET" ||
+			op == "FGET" || op == "LGET" || op == "FDEL" || op == "LDEL" {
+			var err error
+			a, err = number(valA)
+			if err != nil { return "", false, err }
 		}
 	}
 	valB := ""
@@ -308,19 +311,18 @@ func (db Database) Execute(query string) (string, bool, error) {
 			return valA, true, c.list.Insert(0, valA)
 		case "PUSHBEFORE", "PUSHAFTER":
 			// Поиск по значению!
-			idx := c.list.Find(valA)
-			if idx == -1 {
-				return "", false, fmt.Errorf("element not found")
-			}
-			if action == "PUSHAFTER" {
-				idx++
-			}
-			return valB, true, c.list.Insert(idx, valB)
+			e := c.list.InsertRelative(valA, valB, action == "PUSHAFTER")
+			return valB, e == nil, e
 		case "GET":
 			p, e := c.list.At(a)
 			if e != nil {
 				return "", false, e
 			}
+			return p.value, false, nil
+		case "GETFRONT", "GETBACK":
+			p := c.list.head
+			if action == "GETBACK" { p = c.list.tail }
+			if p == nil { return "", false, fmt.Errorf("empty list") }
 			return p.value, false, nil
 		case "FIND":
 			return strconv.Itoa(c.list.Find(valA)), false, nil
@@ -341,14 +343,8 @@ func (db Database) Execute(query string) (string, bool, error) {
 			v, e := c.list.PopBack()
 			return v, true, e
 		case "DELBEFORE", "DELAFTER":
-			if _, e := c.list.At(a); e != nil {
-				return "", false, e
-			}
-			if action == "DELAFTER" {
-				a++
-			} else {
-				a--
-			}
+			v, e := c.list.DeleteRelative(valA, action == "DELAFTER")
+			return v, e == nil, e
 		}
 		v, e := c.list.Delete(a)
 		return v, true, e

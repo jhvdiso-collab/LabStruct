@@ -89,7 +89,7 @@ const map<string, int>& commands() {
             for (const auto& op : {"PUSH", "PUSHFRONT", "PUSHBACK", "DEL", "DELVAL", "GET", "FIND"}) m[p + op] = 3;
             for (const auto& op : {"PUSHBEFORE", "PUSHAFTER"}) m[p + op] = 4;
             for (const auto& op : {"DELBEFORE", "DELAFTER"}) m[p + op] = 3;
-            for (const auto& op : {"DELFRONT", "DELBACK", "LEN", "REVERSE"}) m[p + op] = 2;
+            for (const auto& op : {"DELFRONT", "DELBACK", "LEN", "REVERSE", "GETFRONT", "GETBACK"}) m[p + op] = 2;
         }
         return m;
     }();
@@ -217,8 +217,9 @@ QueryResult Database::execute(const string& query) {
     if (args.size() != static_cast<size_t>(spec->second)) throw invalid_argument("Wrong argument count");
     if (!validName(args[1])) throw invalid_argument("Invalid container name");
     int a = 0;
-    if (args.size() > 2) {
-        try { a = number(args[2]); } catch(...) { /* Если это не число, оставляем 0 */ }
+    if (op == "MINSERT" || op == "MGET" || op == "MDEL" || op == "MSET" ||
+        op == "TINSERT" || op == "TGET" || op == "TDEL" || op == "ISMEMBER") {
+        a = number(args[2]);
     }
     string valA = args.size() > 2 ? args[2] : "";
     string valB = args.size() > 3 ? args[3] : "";
@@ -264,13 +265,19 @@ QueryResult Database::execute(const string& query) {
         if (action == "PUSHFRONT") { add(0, valA); return {valA, true}; }
 
         if (action == "PUSHBEFORE" || action == "PUSHAFTER") {
-            int idx = type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA);
-            if (idx == -1) throw invalid_argument("Element not found");
-            add(idx + (action == "PUSHAFTER" ? 1 : 0), valB);
+            if (type == 'F') {
+                if (action == "PUSHAFTER") pushAfter(c.singly, valA, valB);
+                else pushBefore(c.singly, valA, valB);
+            } else {
+                if (action == "PUSHAFTER") pushAfterDoubly(c.doubly, valA, valB);
+                else pushBeforeDoubly(c.doubly, valA, valB);
+            }
             return {valB, true};
         }
 
         if (action == "GET") return {get(number(valA)), false};
+        if (action == "GETFRONT") return {get(0), false};
+        if (action == "GETBACK") return {get(length() - 1), false};
         if (action == "FIND") return {to_string(type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA)), false};
         if (action == "LEN") return {to_string(length()), false};
         if (action == "REVERSE") return {format(c.values(true)), false};
@@ -285,9 +292,8 @@ QueryResult Database::execute(const string& query) {
             index = length() - 1;
         }
         if (action == "DELBEFORE" || action == "DELAFTER") {
-            int target = type == 'F' ? findSingly(c.singly, valA) : findDoubly(c.doubly, valA);
-            if (target == -1) throw invalid_argument("Element not found");
-            index = target + (action == "DELAFTER" ? 1 : -1);
+            if (type == 'F') return {action == "DELAFTER" ? eraseAfter(c.singly, valA) : eraseBefore(c.singly, valA), true};
+            return {action == "DELAFTER" ? eraseAfterDoubly(c.doubly, valA) : eraseBeforeDoubly(c.doubly, valA), true};
         }
         return {erase(index), true};
     }

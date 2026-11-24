@@ -2,56 +2,6 @@ package main
 
 import "fmt"
 
-type Array struct {
-	data []string
-	size int
-}
-
-func (a *Array) Push(v string) {
-	if a.size == len(a.data) {
-		capacity := len(a.data) * 2
-		if capacity == 0 {
-			capacity = 1
-		}
-		data := make([]string, capacity)
-		copy(data, a.data[:a.size])
-		a.data = data
-	}
-	a.data[a.size] = v
-	a.size++
-}
-func (a *Array) Get(i int) (string, error) {
-	if i < 0 || i >= a.size {
-		return "", fmt.Errorf("array index out of range")
-	}
-	return a.data[i], nil
-}
-func (a *Array) Insert(i int, v string) error {
-	if i < 0 || i > a.size {
-		return fmt.Errorf("array index out of range")
-	}
-	a.Push(v)
-	copy(a.data[i+1:a.size], a.data[i:a.size-1])
-	a.data[i] = v
-	return nil
-}
-func (a *Array) Delete(i int) (string, error) {
-	v, e := a.Get(i)
-	if e != nil {
-		return "", e
-	}
-	copy(a.data[i:a.size-1], a.data[i+1:a.size])
-	a.size--
-	return v, nil
-}
-func (a *Array) Set(i int, v string) error {
-	if _, e := a.Get(i); e != nil {
-		return e
-	}
-	a.data[i] = v
-	return nil
-}
-
 type Link struct {
 	value      string 
 	next, prev *Link
@@ -203,47 +153,17 @@ func (l *List) Values(reverse bool) []string {
 	return out
 }
 
-type Stack struct{ top *Link }
 
-func (s *Stack) Push(v string) { s.top = &Link{value: v, next: s.top} }
-func (s *Stack) Peek() (string, error) {
-	if s.top == nil {
-		return "", fmt.Errorf("empty stack")
-	}
-	return s.top.value, nil
+// Relative operations use the first matching value, never an index.
+func (l *List) InsertRelative(target, value string, after bool) error {
+	i := l.Find(target)
+	if i < 0 { return fmt.Errorf("element not found") }
+	if after { i++ }
+	return l.Insert(i, value)
 }
-func (s *Stack) Pop() (string, error) {
-	v, e := s.Peek()
-	if e == nil {
-		s.top = s.top.next
-	}
-	return v, e
-}
-
-type Queue struct{ head, tail *Link }
-
-func (q *Queue) Push(v string) {
-	p := &Link{value: v}
-	if q.tail == nil {
-		q.head = p
-	} else {
-		q.tail.next = p
-	}
-	q.tail = p
-}
-func (q *Queue) Peek() (string, error) {
-	if q.head == nil {
-		return "", fmt.Errorf("empty queue")
-	}
-	return q.head.value, nil
-}
-func (q *Queue) Pop() (string, error) {
-	v, e := q.Peek()
-	if e == nil {
-		q.head = q.head.next
-		if q.head == nil {
-			q.tail = nil
-		}
-	}
-	return v, e
+func (l *List) DeleteRelative(target string, after bool) (string, error) {
+	i := l.Find(target)
+	if i < 0 { return "", fmt.Errorf("element not found") }
+	if after { i++ } else { i-- }
+	return l.Delete(i)
 }

@@ -31,4 +31,6 @@ void insertDoubly(DoublyList& list, int index, const std::string& value);
 std::string eraseDoubly(DoublyList& list, int index);
 bool eraseDoublyValue(DoublyList& list, const std::string& value);
 std::string popBackDoubly(DoublyList& list);
+std::string eraseBeforeDoubly(DoublyList& list, const std::string& target);
+std::string eraseAfterDoubly(DoublyList& list, const std::string& target);
 #endif

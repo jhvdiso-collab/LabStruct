@@ -24,7 +24,7 @@ void pushBack(SinglyNode*& head, const string& value) {
 
 // Вставка ПЕРЕД заданным значением (новый метод)
 void pushBefore(SinglyNode*& head, const string& target, const string& value) {
-    if (head == nullptr) return;
+    if (head == nullptr) throw invalid_argument("Element not found");
     
     // Если нужно вставить перед головой
     if (head->data == target) {
@@ -40,7 +40,7 @@ void pushBefore(SinglyNode*& head, const string& target, const string& value) {
     if (curr->next != nullptr) {
         SinglyNode* newNode = new SinglyNode{value, curr->next};
         curr->next = newNode;
-    }
+    } else { throw invalid_argument("Element not found"); }
 }
 
 // Вставка ПОСЛЕ заданного значения (новый метод)
@@ -53,7 +53,7 @@ void pushAfter(SinglyNode*& head, const string& target, const string& value) {
     if (curr != nullptr) {
         SinglyNode* newNode = new SinglyNode{value, curr->next};
         curr->next = newNode;
-    }
+    } else { throw invalid_argument("Element not found"); }
 }
 
 void popFront(SinglyNode*& head) {
@@ -162,4 +162,16 @@ bool eraseSinglyValue(SinglyNode*& head, const string& value) {
     }
     eraseSingly(head, index);
     return true;
+}
+
+string eraseBefore(SinglyNode*& head, const string& target) {
+    int index = findSingly(head, target);
+    if (index < 0) throw invalid_argument("Element not found");
+    return eraseSingly(head, index - 1);
+}
+
+string eraseAfter(SinglyNode*& head, const string& target) {
+    int index = findSingly(head, target);
+    if (index < 0) throw invalid_argument("Element not found");
+    return eraseSingly(head, index + 1);
 }
